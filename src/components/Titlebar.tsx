@@ -1,11 +1,11 @@
 // Titlebar.tsx
-import React, { useEffect, useState } from "react";
-import { Window } from "@tauri-apps/api/window";
+import { useEffect, useState } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"; // shadcn Tabs
 import { Button } from "@/components/ui/button"; // or your IconButton
 import { Plus, Minimize, Maximize, X } from "lucide-react";
 
-const appWindow = new Window("theUniqueLabel");
+const appWindow = getCurrentWindow();
 
 export default function Titlebar({
   tabs,
@@ -24,19 +24,27 @@ export default function Titlebar({
 
   useEffect(() => {
     (async () => {
-      const maximized = await appWindow.isMaximized();
-      setIsMaximized(maximized);
+      try {
+        const maximized = await appWindow.isMaximized();
+        setIsMaximized(maximized);
+      } catch (error) {
+        console.error("Failed to ceck window state:", error);
+      }
     })();
     // you can add listeners for maximize/unmaximize if needed
   }, []);
 
   async function toggleMaximize() {
-    if (await appWindow.isMaximized()) {
-      await appWindow.unmaximize();
-      setIsMaximized(false);
-    } else {
-      await appWindow.maximize();
-      setIsMaximized(true);
+    try {
+      if (await appWindow.isMaximized()) {
+        await appWindow.unmaximize();
+        setIsMaximized(false);
+      } else {
+        await appWindow.maximize();
+        setIsMaximized(true);
+      }
+    } catch (error) {
+      console.error("Failed to toggle maximize:", error);
     }
   }
 
@@ -90,7 +98,7 @@ export default function Titlebar({
                   }}
                   className="hover:bg-destructive!"
                 >
-                  <X size={4} />
+                  <X size={14} />
                 </Button>
               </TabsTrigger>
             ))}

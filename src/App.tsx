@@ -1,18 +1,18 @@
 import { Route, Routes } from "react-router";
 import MainLayout from "./Layout/MainLayout";
 import TestPage from "./TestPage";
-import { BrowserRouter } from "react-router";
+import { HashRouter } from "react-router";
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route element={<MainLayout />}>
           {/*<Route index element={<TestPage />} />*/}
-          <Route path="/" element={<TestPage />} />
+          <Route index element={<TestPage />} />
         </Route>
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 

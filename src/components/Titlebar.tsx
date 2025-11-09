@@ -106,11 +106,8 @@ export default function Titlebar({
         <div
           className="tabs-scroll titlebar-no-drag overflow-x-auto"
           onWheel={(e) => {
-            // convert vertical wheel to horizontal scroll for better UX
-            // only if horizontal overflow exists
             const el = e.currentTarget;
             if (el.scrollWidth > el.clientWidth) {
-              // use deltaY for vertical wheels, deltaX for horizontal wheels
               const delta = e.deltaY || e.deltaX;
               if (delta) {
                 el.scrollLeft += delta;
@@ -125,10 +122,7 @@ export default function Titlebar({
             className="titlebar-no-drag"
             onDoubleClick={(e) => e.stopPropagation()}
           >
-            <TabsList
-              className="flex gap-1 whitewhitespace-nowrap rounded-none p-0"
-              // each trigger must be no-drag so clicks work
-            >
+            <TabsList className="flex gap-1 whitewhitespace-nowrap rounded-none p-0">
               {tabs.map((t) => (
                 <TabsTrigger
                   key={t.id}
@@ -184,11 +178,13 @@ export default function Titlebar({
           onDoubleClick={(e) => e.stopPropagation()}
           className="titlebar-no-drag hover:bg-input! rounded-none"
         >
-          {isMaximized ? (
+          {/*{isMaximized ? (
             <SquareArrowOutDownLeft size={14} />
           ) : (
             <Square size={14} />
           )}
+          */}
+          <Square size={14} />
         </Button>
 
         <Button

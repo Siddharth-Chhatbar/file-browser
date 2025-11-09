@@ -1,6 +1,6 @@
 // titlebar.tsx
 import { useEffect, useState } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { getCurrentWindow, type Window } from "@tauri-apps/api/window";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"; // shadcn Tabs
 import { Button } from "@/components/ui/button"; // or your IconButton
 import { Plus, Minus, Square, SquareArrowOutDownLeft, X } from "lucide-react";
@@ -19,26 +19,43 @@ export default function Titlebar({
   onCloseTab: (id: string) => void;
 }) {
   const [isMaximized, setIsMaximized] = useState(false);
-  const [currentWindow, setCurrentWindow] = useState<any>(null);
+  const [currentWindow, setCurrentWindow] = useState<Window | null>(null);
 
   useEffect(() => {
+    let unlisten: (() => void) | undefined;
+
     const initWindow = async () => {
       const appWindow = getCurrentWindow();
       setCurrentWindow(appWindow);
+
+      unlisten = await appWindow.onResized(async () => {
+        try {
+          const isMax = await currentWindow?.isMaximized();
+          setIsMaximized(!!isMax);
+        } catch (error) {
+          console.error("Failed to get maximized state on resize:", error);
+        }
+      });
+
       try {
         const maximized = await appWindow.isMaximized();
-        setIsMaximized(maximized);
+        setIsMaximized(!!maximized);
       } catch (error) {
         console.error("Failed to check maximized state:", error);
       }
     };
 
     initWindow();
+
+    return () => {
+      unlisten?.();
+    };
   }, []);
 
   const handleMinimize = async () => {
+    if (!currentWindow) return;
     try {
-      await currentWindow?.minimize();
+      await currentWindow.minimize();
     } catch (error) {
       console.error("Failed to minimize the window:", error);
     }
@@ -48,7 +65,7 @@ export default function Titlebar({
     try {
       await currentWindow?.toggleMaximize();
       const maximized = await currentWindow?.isMaximized();
-      setIsMaximized(maximized);
+      setIsMaximized(!!maximized);
     } catch (error) {
       console.error("Failed to toggle maximize:", error);
     }
@@ -69,7 +86,7 @@ export default function Titlebar({
       onDoubleClick={handleToggleMaximize}
       // NOTE: keep all interactive children as no-drag
     >
-      {/* left side: optional app icon / mac traffic lights - make them no-drag */}
+      {/* left side: add tab */}
       <div className="titlebar-no-drag flex items-center">
         {/* Example new tab button (no-drag) */}
         <Button
@@ -84,47 +101,66 @@ export default function Titlebar({
         </Button>
       </div>
 
-      {/* center: shadcn Tabs */}
+      {/* center: Tabs */}
       <div className="tabs-wrap flex-1 min-w-0 h-full flex items-center">
-        <Tabs
-          value={value}
-          onValueChange={onValueChange}
-          className="titlebar-no-drag"
-          onDoubleClick={(e) => e.stopPropagation()}
+        <div
+          className="tabs-scroll titlebar-no-drag overflow-x-auto"
+          onWheel={(e) => {
+            // convert vertical wheel to horizontal scroll for better UX
+            // only if horizontal overflow exists
+            const el = e.currentTarget;
+            if (el.scrollWidth > el.clientWidth) {
+              // use deltaY for vertical wheels, deltaX for horizontal wheels
+              const delta = e.deltaY || e.deltaX;
+              if (delta) {
+                el.scrollLeft += delta;
+                e.preventDefault();
+              }
+            }
+          }}
         >
-          <TabsList
-            className="flex gap-1 overflow-x-auto scrollbar-hidden rounded-none p-0"
-            // each trigger must be no-drag so clicks work
+          <Tabs
+            value={value}
+            onValueChange={onValueChange}
+            className="titlebar-no-drag"
+            onDoubleClick={(e) => e.stopPropagation()}
           >
-            {tabs.map((t) => (
-              <TabsTrigger
-                key={t.id}
-                value={t.id}
-                className="titlebar-no-drag whitespace-nowrap px-0 pl-2 rounded-none text-sm flex justify-between items-center w-36"
-              >
-                {t.title}
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label="Close tab"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onCloseTab(t.id);
-                  }}
-                  onDoubleClick={(e) => e.stopPropagation()}
-                  className="hover:bg-destructive! rounded-none"
+            <TabsList
+              className="flex gap-1 whitewhitespace-nowrap rounded-none p-0"
+              // each trigger must be no-drag so clicks work
+            >
+              {tabs.map((t) => (
+                <TabsTrigger
+                  key={t.id}
+                  value={t.id}
+                  className="titlebar-no-drag whitespace-nowrap px-0 pl-2 rounded-none text-sm flex-none justify-between items-center w-36"
                 >
-                  <X size={14} />
-                </Button>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+                  <div className="overflow-hidden text-ellipsis whitespace-nowrap">
+                    {t.title}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Close tab"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onCloseTab(t.id);
+                    }}
+                    onDoubleClick={(e) => e.stopPropagation()}
+                    className="hover:bg-destructive! rounded-none"
+                  >
+                    <X size={14} />
+                  </Button>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
       {/* right side: window controls */}

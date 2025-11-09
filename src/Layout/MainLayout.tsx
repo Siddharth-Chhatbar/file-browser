@@ -1,6 +1,6 @@
 import { AppSidebar } from "@/components/app-sidebar";
-import Taskbar from "@/components/Taskbar";
-import Titlebar from "@/components/Titlebar";
+import Taskbar from "@/components/taskbar";
+import Titlebar from "@/components/titlebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useEffect, useMemo, useState } from "react";
 import { Outlet } from "react-router";
@@ -13,51 +13,38 @@ function getCookieValue(name: string) {
 }
 
 const MainLayout = () => {
-  // sample initial tabs
-  const [tabs, setTabs] = useState([
-    { id: "tab-1", title: "Home" },
-    { id: "tab-2", title: "Documents" },
-  ]);
-
-  // active tab id
+  // temp default tab
+  // add a setting for user to setup a default tab on open
+  const [tabs, setTabs] = useState([{ id: "tab-1", title: "Home" }]);
   const [activeTab, setActiveTab] = useState<string>(tabs[0].id);
 
-  // ensure activeTab stays valid when tabs change
   useEffect(() => {
     if (!tabs.find((t) => t.id === activeTab) && tabs.length > 0) {
       setActiveTab(tabs[0].id);
     }
   }, [tabs, activeTab]);
 
-  // handler to create a new tab
   function handleNewTab() {
     const id = `tab-${Date.now()}`;
+    // change this to the tab opened by the user
+    // add a setting to open a specific location
     const title = "New Tab";
     setTabs((prev) => [...prev, { id, title }]);
     setActiveTab(id);
   }
 
-  // handler to close tabs
   function handleCloseTab(tabIdToClose: string) {
-    // Prevent closing the last remaining tab
     if (tabs.length === 1) {
       console.warn("Cannot close the last remaining tab.");
       return;
     }
 
     setTabs((prev) => {
-      // Filter out the tab being closed
       const newTabs = prev.filter((tab) => tab.id !== tabIdToClose);
 
-      // If the closed tab was the active one, switch the active tab
       if (tabIdToClose === activeTab) {
-        // Find the index of the closed tab in the *old* array
         const closedIndex = prev.findIndex((tab) => tab.id === tabIdToClose);
-
-        // Determine the new active tab: prefer the tab immediately to the left,
-        // or the rightmost tab if the closed tab was the first one.
         const newActiveIndex = closedIndex > 0 ? closedIndex - 1 : 0;
-
         setActiveTab(newTabs[newActiveIndex].id);
       }
 
@@ -65,12 +52,10 @@ const MainLayout = () => {
     });
   }
 
-  // handler when user switches tabs via shadcn Tabs
   function handleChangeTab(id: string) {
     setActiveTab(id);
   }
 
-  // memoized props for Titlebar
   const titlebarTabs = useMemo(
     () => tabs.map((t) => ({ id: t.id, title: t.title })),
     [tabs],

@@ -1,11 +1,9 @@
-// Titlebar.tsx
+// titlebar.tsx
 import { useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"; // shadcn Tabs
 import { Button } from "@/components/ui/button"; // or your IconButton
-import { Plus, Minimize, Maximize, X } from "lucide-react";
-
-const appWindow = getCurrentWindow();
+import { Plus, Minus, Square, SquareArrowOutDownLeft, X } from "lucide-react";
 
 export default function Titlebar({
   tabs,
@@ -21,57 +19,79 @@ export default function Titlebar({
   onCloseTab: (id: string) => void;
 }) {
   const [isMaximized, setIsMaximized] = useState(false);
+  const [currentWindow, setCurrentWindow] = useState<any>(null);
 
   useEffect(() => {
-    (async () => {
+    const initWindow = async () => {
+      const appWindow = getCurrentWindow();
+      setCurrentWindow(appWindow);
       try {
         const maximized = await appWindow.isMaximized();
         setIsMaximized(maximized);
       } catch (error) {
-        console.error("Failed to ceck window state:", error);
+        console.error("Failed to check maximized state:", error);
       }
-    })();
-    // you can add listeners for maximize/unmaximize if needed
+    };
+
+    initWindow();
   }, []);
 
-  async function toggleMaximize() {
+  const handleMinimize = async () => {
     try {
-      if (await appWindow.isMaximized()) {
-        await appWindow.unmaximize();
-        setIsMaximized(false);
-      } else {
-        await appWindow.maximize();
-        setIsMaximized(true);
-      }
+      await currentWindow?.minimize();
+    } catch (error) {
+      console.error("Failed to minimize the window:", error);
+    }
+  };
+
+  const handleToggleMaximize = async () => {
+    try {
+      await currentWindow?.toggleMaximize();
+      const maximized = await currentWindow?.isMaximized();
+      setIsMaximized(maximized);
     } catch (error) {
       console.error("Failed to toggle maximize:", error);
     }
-  }
+  };
+
+  const handleClose = async () => {
+    try {
+      await currentWindow?.close();
+    } catch (error) {
+      console.error("Failed to close the window:", error);
+    }
+  };
 
   return (
     <div
-      className="titlebar -webkit-app-region-drag h-10 flex items-center gap-2 px-2 bg-muted"
+      className="titlebar-drag h-10 flex bg-muted"
       // double-click to toggle maximize on the draggable area (excluding no-drag children)
-      onDoubleClick={() => toggleMaximize()}
+      onDoubleClick={handleToggleMaximize}
       // NOTE: keep all interactive children as no-drag
     >
       {/* left side: optional app icon / mac traffic lights - make them no-drag */}
-      <div className="no-drag flex items-center gap-2 p-2">
+      <div className="titlebar-no-drag flex items-center">
         {/* Example new tab button (no-drag) */}
         <Button
           variant="ghost"
           size="icon"
           aria-label="New tab"
           onClick={onNewTab}
-          className="no-drag"
+          onDoubleClick={(e) => e.stopPropagation()}
+          className="titlebar-no-drag hover:bg-input! rounded-none"
         >
           <Plus size={14} />
         </Button>
       </div>
 
       {/* center: shadcn Tabs */}
-      <div className="tabs-wrap flex-1 min-w-0">
-        <Tabs value={value} onValueChange={onValueChange} className="no-drag">
+      <div className="tabs-wrap flex-1 min-w-0 h-full flex items-center">
+        <Tabs
+          value={value}
+          onValueChange={onValueChange}
+          className="titlebar-no-drag"
+          onDoubleClick={(e) => e.stopPropagation()}
+        >
           <TabsList
             className="flex gap-1 overflow-x-auto scrollbar-hidden rounded-none p-0"
             // each trigger must be no-drag so clicks work
@@ -80,7 +100,7 @@ export default function Titlebar({
               <TabsTrigger
                 key={t.id}
                 value={t.id}
-                className="no-drag whitespace-nowrap pl-3 pr-2 py-0 rounded-none text-sm flex justify-center items-center"
+                className="titlebar-no-drag whitespace-nowrap px-0 pl-2 rounded-none text-sm flex justify-between items-center w-36"
               >
                 {t.title}
                 <Button
@@ -96,7 +116,8 @@ export default function Titlebar({
                     e.stopPropagation();
                     onCloseTab(t.id);
                   }}
-                  className="hover:bg-destructive!"
+                  onDoubleClick={(e) => e.stopPropagation()}
+                  className="hover:bg-destructive! rounded-none"
                 >
                   <X size={14} />
                 </Button>
@@ -107,37 +128,44 @@ export default function Titlebar({
       </div>
 
       {/* right side: window controls */}
-      {/*<div className="no-drag flex items-center gap-1">
+      <div className="titlebar-no-drag flex items-center gap-1 pr-0">
         <Button
           variant="ghost"
           size="icon"
           aria-label="Minimize"
-          onClick={() => appWindow.minimize()}
-          className="no-drag"
+          onClick={handleMinimize}
+          onDoubleClick={(e) => e.stopPropagation()}
+          className="titlebar-no-drag hover:bg-input! rounded-none"
         >
-          <Minimize size={14} />
+          <Minus size={14} />
         </Button>
 
         <Button
           variant="ghost"
           size="icon"
           aria-label={isMaximized ? "Restore" : "Maximize"}
-          onClick={() => toggleMaximize()}
-          className="no-drag"
+          onClick={handleToggleMaximize}
+          onDoubleClick={(e) => e.stopPropagation()}
+          className="titlebar-no-drag hover:bg-input! rounded-none"
         >
-          <Maximize size={14} />
+          {isMaximized ? (
+            <SquareArrowOutDownLeft size={14} />
+          ) : (
+            <Square size={14} />
+          )}
         </Button>
 
         <Button
           variant="ghost"
           size="icon"
           aria-label="Close"
-          onClick={() => appWindow.close()}
-          className="no-drag"
+          onClick={handleClose}
+          onDoubleClick={(e) => e.stopPropagation()}
+          className="titlebar-no-drag hover:bg-destructive! rounded-none"
         >
           <X size={14} />
         </Button>
-      </div>*/}
+      </div>
     </div>
   );
 }

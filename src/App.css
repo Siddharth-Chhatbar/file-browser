@@ -127,4 +127,25 @@
     .titlebar-no-drag {
         -webkit-app-region: no-drag !important;
     }
+    /* hide horizontal scrollbar but keep scroll functionality */
+    .tabs-scroll {
+        -webkit-overflow-scrolling: touch; /* smoother scrolling on some platforms */
+    }
+
+    /* WebKit (Chrome, Safari) */
+    .tabs-scroll::-webkit-scrollbar {
+        height: 0;
+        background: transparent;
+    }
+
+    /* Firefox */
+    .tabs-scroll {
+        scrollbar-width: none;
+    }
+
+    /* Optional: keep a small hit target for mouse wheel/pointer drag
+       (you can remove if not needed) */
+    .tabs-scroll {
+        padding-bottom: 2px;
+    }
 }

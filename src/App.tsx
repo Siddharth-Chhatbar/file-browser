@@ -1,10 +1,18 @@
-import { ModeToggle } from "./components/mode-toggle";
+import { Route, Routes } from "react-router";
+import MainLayout from "./Layout/MainLayout";
+import TestPage from "./TestPage";
+import { HashRouter } from "react-router";
 
 function App() {
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center">
-      <ModeToggle />
-    </div>
+    <HashRouter>
+      <Routes>
+        <Route element={<MainLayout />}>
+          {/*<Route index element={<TestPage />} />*/}
+          <Route index element={<TestPage />} />
+        </Route>
+      </Routes>
+    </HashRouter>
   );
 }
 

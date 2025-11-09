@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { getCurrentWindow, type Window } from "@tauri-apps/api/window";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"; // shadcn Tabs
 import { Button } from "@/components/ui/button"; // or your IconButton
-import { Plus, Minus, Square, SquareArrowOutDownLeft, X } from "lucide-react";
+import { Plus, Minus, Square, X } from "lucide-react";
 
 export default function Titlebar({
   tabs,
@@ -30,7 +30,7 @@ export default function Titlebar({
 
       unlisten = await appWindow.onResized(async () => {
         try {
-          const isMax = await currentWindow?.isMaximized();
+          const isMax = await appWindow.isMaximized();
           setIsMaximized(!!isMax);
         } catch (error) {
           console.error("Failed to get maximized state on resize:", error);
